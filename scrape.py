@@ -9,7 +9,7 @@ import webbrowser
 
 # Get pokemon name and number
 pokedex_number = random.randrange(1, 1025)
-pokemon = pb.pokemon(pokedex_number)
+pokemon = pb.pokemon(371)
 print(pokedex_number, pokemon)
 
 # Request image URL
@@ -32,18 +32,34 @@ pixels = img_rgb.reshape(-1, 3)
 num_clusters = 5
 kmeans = KMeans(n_clusters = num_clusters)
 kmeans.fit(pixels)
-dominant_colors = kmeans.cluster_centers_.astype(int)
+reduced_colors = kmeans.cluster_centers_.astype(int)
 
-for color in dominant_colors:
-	print(color)
+reduced_colors_normalized = [color / 255 for color in reduced_colors]
 
-# Convert back
+# Convert clustered colors back to compressed image
 labels = kmeans.predict(pixels)
 img_compressed = kmeans.cluster_centers_[labels].reshape(img.shape[0], img.shape[1], -1).astype(np.uint8)
+
+# Get frequency of each color
+unique_labels, counts = np.unique(labels, return_counts=True)
+total_pixels = len(labels)
+frequencies = counts / total_pixels
+
+# Figure 1: original image
+plt.figure(1)
 plt.axis("off")
 plt.title(f"{pokedex_number}_{pokemon}")
-plt.imshow(img_compressed)
-plt.show()
+plt.imshow(img_rgb)
 
-cv2.imshow(f"{pokedex_number}_{pokemon}", img)
-cv2.waitKey(0)
+# Figure 2: compressed image
+plt.figure(2)
+plt.axis("off")
+plt.title(f"{pokedex_number}_{pokemon} (Compressed)")
+plt.imshow(img_compressed)
+
+# Figure 3: compressed colors
+plt.figure(3)
+plt.title(f"{pokedex_number}_{pokemon} Color Distribution")
+plt.pie(frequencies, colors=reduced_colors_normalized)
+
+plt.show()

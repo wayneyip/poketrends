@@ -28,11 +28,12 @@ img = cv2.imdecode(img_array, -1)
 img[img[:, :, 3] == 0] = np.zeros(4)
 
 # Convert image to pixel array
-img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGBA)
+img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
 # Get list of opaque pixels only
-opaque_mask = img_rgb[:, :, 3] != 0
-opaque_pixels = img_rgb[opaque_mask]
+opaque_mask = img[:, :, 3] != 0 
+opaque_pixels = img_hsv[opaque_mask][:, :3]
 
 # Cluster the opaque pixels' colors
 num_clusters = 5
@@ -44,7 +45,8 @@ reduced_colors_normalized = [color / 255 for color in reduced_colors]
 # Reconstruct image with clustered colors
 labels = kmeans.labels_
 img_compressed = img.copy()
-img_compressed[opaque_mask] = reduced_colors[labels]
+img_compressed[opaque_mask, :3] = reduced_colors[labels]
+img_compressed = cv2.cvtColor(img_compressed[:, :, :3], cv2.COLOR_HSV2RGB)
 
 # Get frequency of each color
 unique_labels, counts = np.unique(labels, return_counts=True)

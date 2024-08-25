@@ -9,36 +9,42 @@ import webbrowser
 
 # Get pokemon name and number
 pokedex_number = random.randrange(1, 1025)
-pokemon = pb.pokemon(371)
+pokemon = pb.pokemon(pokedex_number)
 print(pokedex_number, pokemon)
 
-# Request image URL
+sprite_url = pokemon.sprites.front_default
+
 img_url_request = Request(
-	f'https://img.pokemondb.net/artwork/large/{pokemon}.jpg', 
+	sprite_url, 
 	headers={'User-Agent': 'Chrome/23.0.1271.64'}
 )
 img_url_response = urlopen(img_url_request)
 
-# Get image
 img_webpage = img_url_response.read()
 img_array = np.array(bytearray(img_webpage), dtype=np.uint8)
 img = cv2.imdecode(img_array, -1)
 
-# Convert image to pixel array
-img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-pixels = img_rgb.reshape(-1, 3)
+# Turn all transparent pixels black
+img[img[:, :, 3] == 0] = np.zeros(4)
 
-# Cluster colors
+# Convert image to pixel array
+img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGBA)
+
+# Get list of opaque pixels only
+opaque_mask = img_rgb[:, :, 3] != 0
+opaque_pixels = img_rgb[opaque_mask]
+
+# Cluster the opaque pixels' colors
 num_clusters = 5
 kmeans = KMeans(n_clusters = num_clusters)
-kmeans.fit(pixels)
+kmeans.fit(opaque_pixels)
 reduced_colors = kmeans.cluster_centers_.astype(int)
-
 reduced_colors_normalized = [color / 255 for color in reduced_colors]
 
-# Convert clustered colors back to compressed image
-labels = kmeans.predict(pixels)
-img_compressed = kmeans.cluster_centers_[labels].reshape(img.shape[0], img.shape[1], -1).astype(np.uint8)
+# Reconstruct image with clustered colors
+labels = kmeans.labels_
+img_compressed = img.copy()
+img_compressed[opaque_mask] = reduced_colors[labels]
 
 # Get frequency of each color
 unique_labels, counts = np.unique(labels, return_counts=True)
@@ -56,7 +62,7 @@ plt.figure(2)
 plt.axis("off")
 plt.title(f"{pokedex_number}_{pokemon} (Compressed)")
 plt.imshow(img_compressed)
-
+ 
 # Figure 3: compressed colors
 plt.figure(3)
 plt.title(f"{pokedex_number}_{pokemon} Color Distribution")

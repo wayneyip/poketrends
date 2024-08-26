@@ -4,6 +4,7 @@ from urllib.request import urlopen, Request
 from sklearn.cluster import KMeans 
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.colors import rgb2hex
 import random
 import webbrowser
 import os
@@ -11,7 +12,7 @@ import os
 os.environ['OMP_NUM_THREADS'] = '6'
 
 # Get pokemon name and number
-pokedex_number = random.randrange(1, 1025)
+pokedex_number = 121 #random.randrange(1, 1025)
 pokemon = pb.pokemon(pokedex_number)
 print(pokedex_number, pokemon)
 
@@ -49,6 +50,7 @@ reduced_hsv_reshaped = reduced_hsv.reshape(1, -1, 3)
 reduced_rgb_reshaped = cv2.cvtColor(reduced_hsv_reshaped, cv2.COLOR_HSV2RGB)
 reduced_rgb = reduced_rgb_reshaped.reshape(-1, 3)
 reduced_rgb_normalized = reduced_rgb / 255
+reduced_rgb_hex = [rgb2hex(color) for color in reduced_rgb_normalized]
 
 # Reconstruct image with clustered colors
 labels = kmeans.labels_
@@ -76,6 +78,11 @@ plt.imshow(img_compressed)
 # Figure 3: compressed colors
 plt.figure(3)
 plt.title(f"{pokedex_number}_{pokemon} Color Distribution")
-plt.pie(frequencies, colors=reduced_rgb_normalized)
+plt.pie(
+	frequencies, 
+	colors=reduced_rgb_normalized, 
+	labels=reduced_rgb_hex, 
+	labeldistance=0.5
+)
 
 plt.show()

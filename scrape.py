@@ -6,6 +6,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random
 import webbrowser
+import os
+
+os.environ['OMP_NUM_THREADS'] = '6'
 
 # Get pokemon name and number
 pokedex_number = random.randrange(1, 1025)

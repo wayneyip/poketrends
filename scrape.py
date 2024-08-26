@@ -42,13 +42,18 @@ opaque_pixels = img_hsv[opaque_mask][:, :3]
 num_clusters = 5
 kmeans = KMeans(n_clusters = num_clusters)
 kmeans.fit(opaque_pixels)
-reduced_colors = kmeans.cluster_centers_.astype(int)
-reduced_colors_normalized = [color / 255 for color in reduced_colors]
+reduced_hsv = kmeans.cluster_centers_.astype(np.uint8)
+
+# Convert clustered colors to RGB (for chart display)
+reduced_hsv_reshaped = reduced_hsv.reshape(1, -1, 3)
+reduced_rgb_reshaped = cv2.cvtColor(reduced_hsv_reshaped, cv2.COLOR_HSV2RGB)
+reduced_rgb = reduced_rgb_reshaped.reshape(-1, 3)
+reduced_rgb_normalized = reduced_rgb / 255
 
 # Reconstruct image with clustered colors
 labels = kmeans.labels_
 img_compressed = img.copy()
-img_compressed[opaque_mask, :3] = reduced_colors[labels]
+img_compressed[opaque_mask, :3] = reduced_hsv[labels]
 img_compressed = cv2.cvtColor(img_compressed[:, :, :3], cv2.COLOR_HSV2RGB)
 
 # Get frequency of each color
@@ -71,6 +76,6 @@ plt.imshow(img_compressed)
 # Figure 3: compressed colors
 plt.figure(3)
 plt.title(f"{pokedex_number}_{pokemon} Color Distribution")
-plt.pie(frequencies, colors=reduced_colors_normalized)
+plt.pie(frequencies, colors=reduced_rgb_normalized)
 
 plt.show()

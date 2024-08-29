@@ -12,7 +12,7 @@ import os
 os.environ['OMP_NUM_THREADS'] = '6'
 
 # Get pokemon name and number
-pokedex_number = 121 #random.randrange(1, 1025)
+pokedex_number = 122 #random.randrange(1, 1025)
 pokemon = pb.pokemon(pokedex_number)
 print(pokedex_number, pokemon)
 
@@ -93,7 +93,8 @@ ax1.scatter(
 	opaque_pixels[:, 0], 
 	opaque_pixels[:, 1], 
 	opaque_pixels[:, 2], 
-	c=opaque_pixels_rgb
+	c=opaque_pixels_rgb,
+	s=100
 )
 ax1.set_xlabel('Hue')
 ax1.set_ylabel('Saturation')
@@ -106,7 +107,8 @@ ax2.scatter(
 	opaque_pixels[:, 0], 
 	opaque_pixels[:, 1], 
 	opaque_pixels[:, 2], 
-	c=reduced_rgb_normalized[labels]
+	c=reduced_rgb_normalized[labels],
+	s=100
 )
 ax2.set_xlabel('Hue')
 ax2.set_ylabel('Saturation')

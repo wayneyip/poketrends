@@ -38,6 +38,7 @@ img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 # Get list of opaque pixels only
 opaque_mask = img[:, :, 3] != 0 
 opaque_pixels = img_hsv[opaque_mask][:, :3]
+opaque_pixels_rgb = img_rgb[opaque_mask][:, :3] / 255
 
 # Cluster the opaque pixels' colors
 num_clusters = 5
@@ -84,5 +85,31 @@ plt.pie(
 	labels=reduced_rgb_hex, 
 	labeldistance=0.5
 )
+
+# Figure 4: uncompressed colors 3D graph
+fig = plt.figure()
+ax1 = fig.add_subplot(projection='3d')
+ax1.scatter(
+	opaque_pixels[:, 0], 
+	opaque_pixels[:, 1], 
+	opaque_pixels[:, 2], 
+	c=opaque_pixels_rgb
+)
+ax1.set_xlabel('Hue')
+ax1.set_ylabel('Saturation')
+ax1.set_zlabel('Value')
+
+# Figure 4: compressed colors 3D graph
+fig = plt.figure()
+ax2 = fig.add_subplot(projection='3d')
+ax2.scatter(
+	opaque_pixels[:, 0], 
+	opaque_pixels[:, 1], 
+	opaque_pixels[:, 2], 
+	c=reduced_rgb_normalized[labels]
+)
+ax2.set_xlabel('Hue')
+ax2.set_ylabel('Saturation')
+ax2.set_zlabel('Value')
 
 plt.show()

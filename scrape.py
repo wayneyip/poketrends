@@ -12,7 +12,7 @@ import os
 os.environ['OMP_NUM_THREADS'] = '6'
 
 # Get pokemon name and number
-pokedex_number = 122 #random.randrange(1, 1025)
+pokedex_number = random.randrange(1, 1025)
 pokemon = pb.pokemon(pokedex_number)
 print(pokedex_number, pokemon)
 
@@ -35,9 +35,12 @@ img[img[:, :, 3] == 0] = np.zeros(4)
 img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
+scale_factor = 5
+
 # Get list of opaque pixels only
 opaque_mask = img[:, :, 3] != 0 
 opaque_pixels = img_hsv[opaque_mask][:, :3]
+opaque_pixels[:, 1:] = img_hsv[opaque_mask][:, 1:] / scale_factor 
 opaque_pixels_rgb = img_rgb[opaque_mask][:, :3] / 255
 
 # Cluster the opaque pixels' colors
@@ -47,6 +50,7 @@ kmeans.fit(opaque_pixels)
 reduced_hsv = kmeans.cluster_centers_.astype(np.uint8)
 
 # Convert clustered colors to RGB (for chart display)
+reduced_hsv[:, 1:] = reduced_hsv[:, 1:] * scale_factor
 reduced_hsv_reshaped = reduced_hsv.reshape(1, -1, 3)
 reduced_rgb_reshaped = cv2.cvtColor(reduced_hsv_reshaped, cv2.COLOR_HSV2RGB)
 reduced_rgb = reduced_rgb_reshaped.reshape(-1, 3)

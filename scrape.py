@@ -33,26 +33,26 @@ img[img[:, :, 3] == 0] = np.zeros(4)
 
 # Convert image to pixel array
 img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+img_lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
 
 scale_factor = 5
 
 # Get list of opaque pixels only
 opaque_mask = img[:, :, 3] != 0 
-opaque_pixels = img_hsv[opaque_mask][:, :3]
-opaque_pixels[:, 1:] = img_hsv[opaque_mask][:, 1:] / scale_factor 
+opaque_pixels = img_lab[opaque_mask][:, :3]
+opaque_pixels[:, 0] = img_lab[opaque_mask][:, 0] / scale_factor 
 opaque_pixels_rgb = img_rgb[opaque_mask][:, :3] / 255
 
 # Cluster the opaque pixels' colors
 num_clusters = 5
 kmeans = KMeans(n_clusters = num_clusters)
 kmeans.fit(opaque_pixels)
-reduced_hsv = kmeans.cluster_centers_.astype(np.uint8)
+reduced_lab = kmeans.cluster_centers_.astype(np.uint8)
 
 # Convert clustered colors to RGB (for chart display)
-reduced_hsv[:, 1:] = reduced_hsv[:, 1:] * scale_factor
-reduced_hsv_reshaped = reduced_hsv.reshape(1, -1, 3)
-reduced_rgb_reshaped = cv2.cvtColor(reduced_hsv_reshaped, cv2.COLOR_HSV2RGB)
+reduced_lab[:, 0] = reduced_lab[:, 0] * scale_factor
+reduced_lab_reshaped = reduced_lab.reshape(1, -1, 3)
+reduced_rgb_reshaped = cv2.cvtColor(reduced_lab_reshaped, cv2.COLOR_LAB2RGB)
 reduced_rgb = reduced_rgb_reshaped.reshape(-1, 3)
 reduced_rgb_normalized = reduced_rgb / 255
 reduced_rgb_hex = [rgb2hex(color) for color in reduced_rgb_normalized]
@@ -60,8 +60,8 @@ reduced_rgb_hex = [rgb2hex(color) for color in reduced_rgb_normalized]
 # Reconstruct image with clustered colors
 labels = kmeans.labels_
 img_compressed = img.copy()
-img_compressed[opaque_mask, :3] = reduced_hsv[labels]
-img_compressed = cv2.cvtColor(img_compressed[:, :, :3], cv2.COLOR_HSV2RGB)
+img_compressed[opaque_mask, :3] = reduced_lab[labels]
+img_compressed = cv2.cvtColor(img_compressed[:, :, :3], cv2.COLOR_LAB2RGB)
 
 # Get frequency of each color
 unique_labels, counts = np.unique(labels, return_counts=True)
@@ -100,9 +100,9 @@ ax1.scatter(
 	c=opaque_pixels_rgb,
 	s=100
 )
-ax1.set_xlabel('Hue')
-ax1.set_ylabel('Saturation')
-ax1.set_zlabel('Value')
+ax1.set_xlabel('Lightness')
+ax1.set_ylabel('A: Red-Green')
+ax1.set_zlabel('B: Blue-Yellow')
 
 # Figure 4: compressed colors 3D graph
 fig = plt.figure()
@@ -114,8 +114,8 @@ ax2.scatter(
 	c=reduced_rgb_normalized[labels],
 	s=100
 )
-ax2.set_xlabel('Hue')
-ax2.set_ylabel('Saturation')
-ax2.set_zlabel('Value')
+ax1.set_xlabel('Lightness')
+ax1.set_ylabel('A: Red-Green')
+ax1.set_zlabel('B: Blue-Yellow')
 
 plt.show()

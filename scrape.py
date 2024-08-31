@@ -5,6 +5,7 @@ from sklearn.cluster import KMeans
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import rgb2hex
+import math
 import random
 import webbrowser
 import os
@@ -43,8 +44,35 @@ opaque_pixels = img_lab[opaque_mask][:, :3]
 opaque_pixels[:, 0] = img_lab[opaque_mask][:, 0] / scale_factor 
 opaque_pixels_rgb = img_rgb[opaque_mask][:, :3] / 255
 
+def find_elbow(data):
+
+	inertias = []
+
+	for i in range(1, 7):
+		test_kmeans = KMeans(n_clusters=i).fit(data)
+		test_kmeans.fit(opaque_pixels)
+		inertias.append(test_kmeans.inertia_)
+
+	def normalize(arr):
+		min_num = np.min(arr)
+		num_range = np.max(arr) - np.min(arr)
+		normalized_arr = (arr - min_num) / num_range * 5
+		return normalized_arr
+
+	normalized_inertias = normalize(inertias)
+
+	for i in range(len(inertias)):
+		if i >= 1:
+			x_diff = 1
+			y_diff = normalized_inertias[i] - normalized_inertias[i-1]
+			angle = np.arctan2(y_diff, x_diff)
+			print(angle)
+			if angle > -0.7854: # 45 degrees, or PI/4 radians
+				print(f"found elbow: {i}")
+				return i, normalized_inertias
+
 # Cluster the opaque pixels' colors
-num_clusters = 5
+num_clusters, inertias = find_elbow(opaque_pixels)
 kmeans = KMeans(n_clusters = num_clusters)
 kmeans.fit(opaque_pixels)
 reduced_lab = kmeans.cluster_centers_.astype(np.uint8)
@@ -114,8 +142,19 @@ ax2.scatter(
 	c=reduced_rgb_normalized[labels],
 	s=100
 )
-ax1.set_xlabel('Lightness')
-ax1.set_ylabel('A: Red-Green')
-ax1.set_zlabel('B: Blue-Yellow')
+ax2.set_xlabel('Lightness')
+ax2.set_ylabel('A: Red-Green')
+ax2.set_zlabel('B: Blue-Yellow')
+
+# Figure 6: elbow graph
+fig = plt.figure()
+ax3 = fig.add_subplot()
+ax3.scatter(
+	list(range(1, 7)),
+	inertias
+)
+ax3.set_xlabel('Number of clusters')
+ax3.set_ylabel('Inertia')
+	
 
 plt.show()

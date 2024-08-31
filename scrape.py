@@ -96,31 +96,29 @@ unique_labels, counts = np.unique(labels, return_counts=True)
 total_pixels = len(labels)
 frequencies = counts / total_pixels
 
+fig, axs = plt.subplots(2, 3, figsize=(15, 10))
+
 # Figure 1: original image
-plt.figure(1)
-plt.axis("off")
-plt.title(f"{pokedex_number}_{pokemon}")
-plt.imshow(img_rgb)
+axs[0, 0].imshow(img_rgb)
+axs[0, 0].axis('off')
+axs[0, 0].set_title(f"{pokedex_number}_{pokemon}")
 
 # Figure 2: compressed image
-plt.figure(2)
-plt.axis("off")
-plt.title(f"{pokedex_number}_{pokemon} (Compressed)")
-plt.imshow(img_compressed)
+axs[0, 1].imshow(img_compressed)
+axs[0, 1].axis('off')
+axs[0, 1].set_title(f"{pokedex_number}_{pokemon} (Compressed)")
  
 # Figure 3: compressed colors
-plt.figure(3)
-plt.title(f"{pokedex_number}_{pokemon} Color Distribution")
-plt.pie(
+axs[0, 2].pie(
 	frequencies, 
 	colors=reduced_rgb_normalized, 
 	labels=reduced_rgb_hex, 
 	labeldistance=0.5
 )
+axs[0, 2].set_title(f"{pokedex_number}_{pokemon} Color Distribution")
 
 # Figure 4: uncompressed colors 3D graph
-fig = plt.figure()
-ax1 = fig.add_subplot(projection='3d')
+ax1 = fig.add_subplot(2, 3, 4, projection='3d')
 ax1.scatter(
 	opaque_pixels[:, 0], 
 	opaque_pixels[:, 1], 
@@ -132,9 +130,8 @@ ax1.set_xlabel('Lightness')
 ax1.set_ylabel('A: Red-Green')
 ax1.set_zlabel('B: Blue-Yellow')
 
-# Figure 4: compressed colors 3D graph
-fig = plt.figure()
-ax2 = fig.add_subplot(projection='3d')
+# Figure 5: compressed colors 3D graph
+ax2 = fig.add_subplot(2, 3, 5, projection='3d')
 ax2.scatter(
 	opaque_pixels[:, 0], 
 	opaque_pixels[:, 1], 
@@ -147,14 +144,15 @@ ax2.set_ylabel('A: Red-Green')
 ax2.set_zlabel('B: Blue-Yellow')
 
 # Figure 6: elbow graph
-fig = plt.figure()
-ax3 = fig.add_subplot()
+ax3 = fig.add_subplot(2, 3, 6)
 ax3.scatter(
 	list(range(1, 7)),
 	inertias
 )
 ax3.set_xlabel('Number of clusters')
 ax3.set_ylabel('Inertia')
-	
+
+for ax in axs[1, :]:
+    ax.set_axis_off()
 
 plt.show()

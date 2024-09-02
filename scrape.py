@@ -13,7 +13,7 @@ import os
 os.environ['OMP_NUM_THREADS'] = '6'
 
 # Get pokemon name and number
-pokedex_number = random.randrange(1, 1025)
+pokedex_number = 478#random.randrange(1, 1025)
 pokemon = pb.pokemon(pokedex_number)
 print(pokedex_number, pokemon)
 
@@ -36,13 +36,20 @@ img[img[:, :, 3] == 0] = np.zeros(4)
 img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 img_lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
 
-scale_factor = 5
+# Get opaque pixels
+pixels = img_lab.reshape(-1, 3)
+opaque_mask = img[:, :, 3] != 0
+opaque_pixels = img_lab[opaque_mask]
+opaque_pixels_rgb = img_rgb[opaque_mask]
 
-# Get list of opaque pixels only
-opaque_mask = img[:, :, 3] != 0 
-opaque_pixels = img_lab[opaque_mask][:, :3]
-opaque_pixels[:, 0] = img_lab[opaque_mask][:, 0] / scale_factor 
-opaque_pixels_rgb = img_rgb[opaque_mask][:, :3] / 255
+# Get unique colors in opaque pixels
+unique_colors = list(set([tuple(color) for color in opaque_pixels]))
+unique_colors_rgb = np.array(unique_colors).reshape(1, -1, 3)
+unique_colors_rgb = cv2.cvtColor(unique_colors_rgb, cv2.COLOR_LAB2RGB)
+unique_colors_rgb = unique_colors_rgb.reshape(-1, 3)
+unique_colors_rgb = unique_colors_rgb / 255
+
+scale_factor = 5
 
 def find_elbow(data):
 
@@ -50,7 +57,7 @@ def find_elbow(data):
 
 	for i in range(1, 7):
 		test_kmeans = KMeans(n_clusters=i).fit(data)
-		test_kmeans.fit(opaque_pixels)
+		test_kmeans.fit(data)
 		inertias.append(test_kmeans.inertia_)
 
 	def normalize(arr):
@@ -71,30 +78,40 @@ def find_elbow(data):
 				print(f"found elbow: {i}")
 				return i, normalized_inertias
 
-# Cluster the opaque pixels' colors
-num_clusters, inertias = find_elbow(opaque_pixels)
-kmeans = KMeans(n_clusters = num_clusters)
-kmeans.fit(opaque_pixels)
+# Cluster unique colors
+num_clusters, inertias = find_elbow(unique_colors)
+kmeans = KMeans(n_clusters = 4)
+kmeans.fit(unique_colors)
 reduced_lab = kmeans.cluster_centers_.astype(np.uint8)
-
-# Convert clustered colors to RGB (for chart display)
-reduced_lab[:, 0] = reduced_lab[:, 0] * scale_factor
-reduced_lab_reshaped = reduced_lab.reshape(1, -1, 3)
-reduced_rgb_reshaped = cv2.cvtColor(reduced_lab_reshaped, cv2.COLOR_LAB2RGB)
-reduced_rgb = reduced_rgb_reshaped.reshape(-1, 3)
-reduced_rgb_normalized = reduced_rgb / 255
-reduced_rgb_hex = [rgb2hex(color) for color in reduced_rgb_normalized]
 
 # Reconstruct image with clustered colors
 labels = kmeans.labels_
 img_compressed = img.copy()
-img_compressed[opaque_mask, :3] = reduced_lab[labels]
+
+indices = np.where(opaque_mask)
+
+for i in range(len(indices[0])):
+	color = img_lab[indices[0][i], indices[1][i]]
+	color_hash = tuple(color)
+
+	color_index = unique_colors.index(color_hash)
+	mapped_color = reduced_lab[labels][color_index]
+	img_compressed[indices[0][i], indices[1][i], :3] = mapped_color
+		
 img_compressed = cv2.cvtColor(img_compressed[:, :, :3], cv2.COLOR_LAB2RGB)
 
 # Get frequency of each color
-unique_labels, counts = np.unique(labels, return_counts=True)
-total_pixels = len(labels)
+unique_colors_final, counts = np.unique(img_compressed[opaque_mask], axis=0, return_counts=True)
+total_pixels = len(img_compressed[opaque_mask])
 frequencies = counts / total_pixels
+
+# # Convert clustered colors back to RGB (for chart display)
+# reduced_lab[:, 0] = reduced_lab[:, 0] * scale_factor
+reduced_rgb_normalized = unique_colors_final / 255
+reduced_rgb_hex = [rgb2hex(color) for color in reduced_rgb_normalized]
+
+for i in range(len(reduced_rgb_hex)):
+	print(f"{reduced_rgb_hex[i]} {counts[i]} {frequencies[i]}")
 
 fig, axs = plt.subplots(2, 3, figsize=(15, 10))
 
@@ -120,10 +137,11 @@ axs[0, 2].set_title(f"{pokedex_number}_{pokemon} Color Distribution")
 # Figure 4: uncompressed colors 3D graph
 ax1 = fig.add_subplot(2, 3, 4, projection='3d')
 ax1.scatter(
-	opaque_pixels[:, 0], 
-	opaque_pixels[:, 1], 
-	opaque_pixels[:, 2], 
-	c=opaque_pixels_rgb,
+	[color[0] for color in unique_colors], 
+	[color[1] for color in unique_colors], 
+	[color[2] for color in unique_colors], 
+	c=unique_colors_rgb,
+	alpha=1,
 	s=100
 )
 ax1.set_xlabel('Lightness')
@@ -133,10 +151,11 @@ ax1.set_zlabel('B: Blue-Yellow')
 # Figure 5: compressed colors 3D graph
 ax2 = fig.add_subplot(2, 3, 5, projection='3d')
 ax2.scatter(
-	opaque_pixels[:, 0], 
-	opaque_pixels[:, 1], 
-	opaque_pixels[:, 2], 
+	[color[0] for color in unique_colors], 
+	[color[1] for color in unique_colors], 
+	[color[2] for color in unique_colors], 
 	c=reduced_rgb_normalized[labels],
+	alpha=1,
 	s=100
 )
 ax2.set_xlabel('Lightness')
@@ -152,6 +171,7 @@ ax3.scatter(
 ax3.set_xlabel('Number of clusters')
 ax3.set_ylabel('Inertia')
 
+# Hide default 2D axes for bottom row
 for ax in axs[1, :]:
     ax.set_axis_off()
 

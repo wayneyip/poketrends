@@ -49,7 +49,7 @@ unique_colors_rgb = cv2.cvtColor(unique_colors_rgb, cv2.COLOR_LAB2RGB)
 unique_colors_rgb = unique_colors_rgb.reshape(-1, 3)
 unique_colors_rgb = unique_colors_rgb / 255
 
-scale_factor = 5
+# unique_colors_scaled = [(l**2, a**2, b**2) for l, a, b in unique_colors]
 
 def find_elbow(data):
 
@@ -106,12 +106,13 @@ total_pixels = len(img_compressed[opaque_mask])
 frequencies = counts / total_pixels
 
 # # Convert clustered colors back to RGB (for chart display)
-# reduced_lab[:, 0] = reduced_lab[:, 0] * scale_factor
 reduced_rgb_normalized = unique_colors_final / 255
 reduced_rgb_hex = [rgb2hex(color) for color in reduced_rgb_normalized]
 
-for i in range(len(reduced_rgb_hex)):
-	print(f"{reduced_rgb_hex[i]} {counts[i]} {frequencies[i]}")
+reduced_colors_rgb = reduced_lab[labels].reshape(1, -1, 3)
+reduced_colors_rgb = cv2.cvtColor(reduced_colors_rgb, cv2.COLOR_LAB2RGB)
+reduced_colors_rgb = reduced_colors_rgb.reshape(-1, 3)
+reduced_colors_rgb = reduced_colors_rgb / 255
 
 fig, axs = plt.subplots(2, 3, figsize=(15, 10))
 
@@ -154,7 +155,7 @@ ax2.scatter(
 	[color[0] for color in unique_colors], 
 	[color[1] for color in unique_colors], 
 	[color[2] for color in unique_colors], 
-	c=reduced_rgb_normalized[labels],
+	c=reduced_colors_rgb,
 	alpha=1,
 	s=100
 )

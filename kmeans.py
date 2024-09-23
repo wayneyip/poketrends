@@ -13,7 +13,7 @@ import os
 os.environ['OMP_NUM_THREADS'] = '6'
 
 # Get pokemon name and number
-pokedex_number = 478#random.randrange(1, 1025)
+pokedex_number = random.randrange(1, 1025)
 pokemon = pb.pokemon(pokedex_number)
 print(pokedex_number, pokemon)
 
@@ -49,7 +49,8 @@ unique_colors_rgb = cv2.cvtColor(unique_colors_rgb, cv2.COLOR_LAB2RGB)
 unique_colors_rgb = unique_colors_rgb.reshape(-1, 3)
 unique_colors_rgb = unique_colors_rgb / 255
 
-# unique_colors_scaled = [(l**2, a**2, b**2) for l, a, b in unique_colors]
+power = 1.1
+unique_colors_scaled = [(l*power, a*power, b*power) for l, a, b in unique_colors]
 
 def find_elbow(data):
 
@@ -81,7 +82,7 @@ def find_elbow(data):
 # Cluster unique colors
 num_clusters, inertias = find_elbow(unique_colors)
 kmeans = KMeans(n_clusters = 4)
-kmeans.fit(unique_colors)
+kmeans.fit(unique_colors_scaled)
 reduced_lab = kmeans.cluster_centers_.astype(np.uint8)
 
 # Reconstruct image with clustered colors

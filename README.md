@@ -7,7 +7,7 @@ As a hobbying Pokémon designer, this is my pet project to find underlying patte
 - **Design Parameter**: Color count
 - **Learning Method**: K-means clustering
 - **Cluster Determination**: Elbow method
-- **Color Space**: L*A*B
+- **Color Space**: L\*A\*B
 
 ![image](https://github.com/user-attachments/assets/96a2c371-d8ad-4531-9020-d58e9cc8c7bb)
 
